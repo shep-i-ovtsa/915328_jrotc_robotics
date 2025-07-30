@@ -1,0 +1,124 @@
+diff --git a/src/PID.cpp b/src/PID.cpp
+index c901563..1ec99c0 100644
+--- a/src/PID.cpp
++++ b/src/PID.cpp
+@@ -18,7 +18,7 @@ void drivePID(double targetInches, double kP = 0.1, double kI = 0.1, double kD =
+   double lastError = 0;
+   double maxIntegral = 100;
+ 
+-  while (fabs(error) > 1.0) {
++  while (fabs(error) > 1.0) { //Keep running until you’re within 1° of your target
+     double leftAvg = (LF.position(degrees) + LM.position(degrees) + LB.position(degrees)) / 3.0;
+     double rightAvg = (RF.position(degrees) + RM.position(degrees) + RB.position(degrees)) / 3.0;
+     double avgPos = (leftAvg + rightAvg) / 2.0;
+@@ -54,39 +54,38 @@ void turnPID(double targetAngle, double kP = 0.1, double kI = 0.1, double kD = 0
+   // Reset inertial and motor encoders
+   InertialSensor.setRotation(0, degrees);
+ 
+-  setDTPosition(0);
+-
+-  double error = targetAngle;
+-  double integral = 0;
+-  double derivative = 0;
+-  double lastError = 0;
+-  double maxIntegral = 50;
+-
+-  while (fabs(error) > 1.0) {
+-    double currentAngle = InertialSensor.rotation(degrees);
+-    error = targetAngle - currentAngle;
+-
+-    integral += error;
+-    if (integral > maxIntegral) integral = maxIntegral;
+-    if (integral < -maxIntegral) integral = -maxIntegral;
+-
+-    derivative = error - lastError;
+-    lastError = error;
+-
+-    double turnPower = (kP * error) + (kI * integral) + (kD * derivative);
+-
+-    // Clamp power
+-    if (turnPower > 100) turnPower = 100;
+-    if (turnPower < -100) turnPower = -100;
+-
+-    // Left side spins backward, right side spins forward for clockwise turn
+-    spinRightDT(turnPower * -1);
+-    spinLeftDT(turnPower);
++  // PID state
++  double err   = targetAngle;
++  double integ = 0;
++  double deriv, last = 0;
++  const double maxI = 50.0;
++  const double tol  = 1.0; // degrees
++
++  // loop til we’re close
++  while (fabs(err) > tol) {
++    err = targetAngle - InertialSensor.rotation(degrees);
++    integ += err;
++    if (integ >  maxI) integ =  maxI;
++    if (integ < -maxI) integ = -maxI;
++    deriv = err - last;
++    last  = err;
++
++    double power = kP*err + kI*integ + kD*deriv;
++    power = std::clamp(power, -100.0, 100.0);
++
++    // left backwards, right forwards → clockwise if power>0
++    LF.spin(forward, -power, percent);
++    LM.spin(forward, -power, percent);
++    LB.spin(forward, -power, percent);
++    RF.spin(forward,  power, percent);
++    RM.spin(forward,  power, percent);
++    RB.spin(forward,  power, percent);
+ 
+     vex::task::sleep(20);
+   }
+ 
+-  // Stop all motors
+-  stopDT();
++  // stop all
++  LF.stop(brake); LM.stop(brake); LB.stop(brake);
++  RF.stop(brake); RM.stop(brake); RB.stop(brake);
+ 
+ }
+\ No newline at end of file
+diff --git a/src/functions.cpp b/src/functions.cpp
+index 42805bd..bbe10a3 100644
+--- a/src/functions.cpp
++++ b/src/functions.cpp
+@@ -17,6 +17,7 @@ void setDTPosition(double inches) {
+     RB.setPosition(deg, degrees);
+ }
+ 
++
+ void spinDT(double velocity) {
+     LF.spin(forward, velocity, percent);
+     LM.spin(forward, velocity, percent);
+@@ -26,6 +27,7 @@ void spinDT(double velocity) {
+     RB.spin(forward, velocity, percent);
+ }
+ 
++
+ void stopDT() {
+     LF.stop();
+     LM.stop();
+@@ -35,6 +37,7 @@ void stopDT() {
+     RB.stop();
+ }
+ 
++
+ void spinRightDT(double velocity) {
+     RF.spin(forward, velocity, percent);
+     RM.spin(forward, velocity, percent);
+diff --git a/src/main.cpp b/src/main.cpp
+index 07a2f6c..1924e16 100644
+--- a/src/main.cpp
++++ b/src/main.cpp
+@@ -89,7 +89,7 @@ void usercontrol(void) {
+   while (true) {
+     // ========== DRIVE CONTROL ========== //
+     double fwd = Controller.Axis3.position();
+-    double turn    = Controller.Axis4.position();
++    double turn = Controller.Axis4.position();
+ 
+     double leftPower  = fwd + turn;
+     double rightPower = fwd - turn;
