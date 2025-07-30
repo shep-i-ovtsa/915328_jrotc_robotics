@@ -39,6 +39,7 @@ void strafe(char direc, int dist, int speed){
 }
 void reset(void){
     LeftDrive.resetPosition();
+    RightDrive.resetPosition();
 }
 
 //###########################################

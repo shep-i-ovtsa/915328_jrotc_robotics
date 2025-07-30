@@ -102,7 +102,7 @@ void usercontrol(void) {
 
       RightDrive.spin(directionType::fwd, right_inp, velocityUnits::pct);
     } else {
-      LeftDrive.stop(coast);
+      RightDrive.stop(coast);
     }
 
   //i beg you!!! dont waste cpu cycles T-T
