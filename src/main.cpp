@@ -114,7 +114,7 @@ void usercontrol(void) {
 // Main will set up the competition functions and callbacks.
 //
 int main() {
-
+  vexcodeInit();
   pre_auton();
 
   Competition.autonomous(autonomous);
