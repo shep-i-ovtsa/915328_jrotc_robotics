@@ -1,4 +1,4 @@
-//#pragma once
+#pragma once
 
 /* These prevent header files from being included multiple times*/
 #ifndef ARM_H //if header file is not defined
