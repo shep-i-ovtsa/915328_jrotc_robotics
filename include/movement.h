@@ -6,4 +6,4 @@
 void move(char direc, int dist, int speed);
 void turn(int angle, int speed);
 void strafe(char direc, int dist, int speed);
-double encoder_distance(double input, std::string unit);
+void move_init(void);

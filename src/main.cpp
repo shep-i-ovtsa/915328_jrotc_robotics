@@ -9,7 +9,6 @@
 #include <cmath>
 #include "vex.h"
 #include "robot-config.h"
-#include "PID.h"
 #include "autons.h"
 #include "auton-selector.h"
 #include "arm.h"
